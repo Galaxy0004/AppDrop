@@ -14,11 +14,11 @@ The project is split into two main parts:
   <table style="width:100%; border:none;">
     <tr>
       <td align="center" style="border:none;">
-        <strong>✨ Dashboard View</strong><br>
+        <strong> Dashboard View</strong><br>
         <img src="screenshots/dashboard.png" alt="AppDrop Dashboard" width="45%">
       </td>
       <td align="center" style="border:none;">
-        <strong>📱 Widget Management</strong><br>
+        <strong> Widget Visualization</strong><br>
         <img src="screenshots/widgets.png" alt="Widget Management" width="45%">
       </td>
     </tr>
