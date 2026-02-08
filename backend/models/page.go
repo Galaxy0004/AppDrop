@@ -6,32 +6,33 @@ import (
 	"github.com/google/uuid"
 )
 
-// Page represents a screen in the mobile app
+// Page represents a high-level screen or container within the mobile application.
+// It serves as a parent entity for multiple UI components (widgets).
 type Page struct {
-	ID        uuid.UUID  `json:"id"`
-	Name      string     `json:"name"`
-	Route     string     `json:"route"`
-	IsHome    bool       `json:"is_home"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	Widgets   []Widget   `json:"widgets,omitempty"`
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	Route     string    `json:"route"`
+	IsHome    bool      `json:"is_home"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Widgets   []Widget  `json:"widgets,omitempty"`
 }
 
-// CreatePageRequest represents the request body for creating a page
+// CreatePageRequest defines the expected payload for the page creation endpoint.
 type CreatePageRequest struct {
 	Name   string `json:"name" binding:"required"`
 	Route  string `json:"route" binding:"required"`
 	IsHome bool   `json:"is_home"`
 }
 
-// UpdatePageRequest represents the request body for updating a page
+// UpdatePageRequest defines the expected payload for the page update endpoint, where fields are optional.
 type UpdatePageRequest struct {
 	Name   *string `json:"name,omitempty"`
 	Route  *string `json:"route,omitempty"`
 	IsHome *bool   `json:"is_home,omitempty"`
 }
 
-// PageResponse represents the API response for a page
+// PageResponse encapsulates the data returned to the client for single-page queries.
 type PageResponse struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
@@ -42,7 +43,7 @@ type PageResponse struct {
 	Widgets   []Widget  `json:"widgets,omitempty"`
 }
 
-// PageListResponse represents the API response for listing pages
+// PageListResponse provides a structured wrapper for paginated collections of Page entities.
 type PageListResponse struct {
 	Pages      []Page `json:"pages"`
 	Total      int    `json:"total"`

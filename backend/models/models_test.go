@@ -1,9 +1,12 @@
+// Package models contains unit tests for verifying the integrity of data models and validation logic.
 package models
 
 import (
 	"testing"
 )
 
+// TestIsValidWidgetType verifies that the widget type validation logic correctly identifies
+// supported and unsupported widget type strings across various edge cases.
 func TestIsValidWidgetType(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -33,9 +36,11 @@ func TestIsValidWidgetType(t *testing.T) {
 	}
 }
 
+// TestNewErrorResponse ensures that generalized error responses are initialized with the
+// correct code and message parameters.
 func TestNewErrorResponse(t *testing.T) {
 	response := NewErrorResponse(ErrorCodeValidation, "test message")
-	
+
 	if response.Error.Code != ErrorCodeValidation {
 		t.Errorf("Expected code %s, got %s", ErrorCodeValidation, response.Error.Code)
 	}
@@ -44,9 +49,10 @@ func TestNewErrorResponse(t *testing.T) {
 	}
 }
 
+// TestNewValidationError verifies the shorthand constructor for validation errors.
 func TestNewValidationError(t *testing.T) {
 	response := NewValidationError("validation failed")
-	
+
 	if response.Error.Code != ErrorCodeValidation {
 		t.Errorf("Expected code %s, got %s", ErrorCodeValidation, response.Error.Code)
 	}
@@ -55,22 +61,26 @@ func TestNewValidationError(t *testing.T) {
 	}
 }
 
+// TestNewNotFoundError verifies the shorthand constructor for resource not found errors.
 func TestNewNotFoundError(t *testing.T) {
 	response := NewNotFoundError("not found")
-	
+
 	if response.Error.Code != ErrorCodeNotFound {
 		t.Errorf("Expected code %s, got %s", ErrorCodeNotFound, response.Error.Code)
 	}
 }
 
+// TestNewConflictError verifies the shorthand constructor for resource conflict errors.
 func TestNewConflictError(t *testing.T) {
 	response := NewConflictError("conflict")
-	
+
 	if response.Error.Code != ErrorCodeConflict {
 		t.Errorf("Expected code %s, got %s", ErrorCodeConflict, response.Error.Code)
 	}
 }
 
+// TestValidWidgetTypes confirms that the global list of valid widget types is complete
+// and ordered correctly as per the architectural design.
 func TestValidWidgetTypes(t *testing.T) {
 	expectedTypes := []WidgetType{
 		WidgetTypeBanner,

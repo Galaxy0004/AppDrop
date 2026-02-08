@@ -10,17 +10,18 @@ import (
 	"github.com/google/uuid"
 )
 
-// PageRepository handles database operations for pages
+// PageRepository manages database operations specifically for Page entities.
+// It provides methods for CRUD operations, route validation, and complex page-widget data retrieval.
 type PageRepository struct {
 	db *sql.DB
 }
 
-// NewPageRepository creates a new PageRepository
+// NewPageRepository initializes and returns a new instance of PageRepository.
 func NewPageRepository(db *sql.DB) *PageRepository {
 	return &PageRepository{db: db}
 }
 
-// Create creates a new page in the database
+// Create persists a new Page entity in the data store.
 func (r *PageRepository) Create(page *models.Page) error {
 	query := `
 		INSERT INTO pages (name, route, is_home)
@@ -31,7 +32,7 @@ func (r *PageRepository) Create(page *models.Page) error {
 		Scan(&page.ID, &page.CreatedAt, &page.UpdatedAt)
 }
 
-// GetByID retrieves a page by its ID
+// GetByID retrieves a single Page entity by its unique identifier.
 func (r *PageRepository) GetByID(id uuid.UUID) (*models.Page, error) {
 	query := `
 		SELECT id, name, route, is_home, created_at, updated_at
@@ -52,7 +53,7 @@ func (r *PageRepository) GetByID(id uuid.UUID) (*models.Page, error) {
 	return page, nil
 }
 
-// GetByRoute retrieves a page by its route
+// GetByRoute retrieves a Page entity by its uniquely associated route.
 func (r *PageRepository) GetByRoute(route string) (*models.Page, error) {
 	query := `
 		SELECT id, name, route, is_home, created_at, updated_at
@@ -73,7 +74,7 @@ func (r *PageRepository) GetByRoute(route string) (*models.Page, error) {
 	return page, nil
 }
 
-// GetHomePage retrieves the home page
+// GetHomePage retrieves the Page designated as the application's home page.
 func (r *PageRepository) GetHomePage() (*models.Page, error) {
 	query := `
 		SELECT id, name, route, is_home, created_at, updated_at
@@ -95,16 +96,14 @@ func (r *PageRepository) GetHomePage() (*models.Page, error) {
 	return page, nil
 }
 
-// GetAll retrieves all pages with pagination
+// GetAll retrieves a paginated collection of Page entities.
 func (r *PageRepository) GetAll(page, perPage int) ([]models.Page, int, error) {
-	// Get total count
 	var total int
 	countQuery := `SELECT COUNT(*) FROM pages`
 	if err := r.db.QueryRow(countQuery).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
-	// Get pages with pagination
 	offset := (page - 1) * perPage
 	query := `
 		SELECT id, name, route, is_home, created_at, updated_at
@@ -133,9 +132,8 @@ func (r *PageRepository) GetAll(page, perPage int) ([]models.Page, int, error) {
 	return pages, total, rows.Err()
 }
 
-// Update updates a page in the database
+// Update modifies an existing Page entity with the provided field updates.
 func (r *PageRepository) Update(id uuid.UUID, updates map[string]interface{}) (*models.Page, error) {
-	// Build dynamic update query
 	setClauses := ""
 	args := []interface{}{}
 	argIndex := 1
@@ -175,7 +173,7 @@ func (r *PageRepository) Update(id uuid.UUID, updates map[string]interface{}) (*
 	return page, nil
 }
 
-// Delete deletes a page from the database
+// Delete removes a Page entity from the data store by its ID.
 func (r *PageRepository) Delete(id uuid.UUID) error {
 	query := `DELETE FROM pages WHERE id = $1`
 	result, err := r.db.Exec(query, id)
@@ -192,21 +190,20 @@ func (r *PageRepository) Delete(id uuid.UUID) error {
 	return nil
 }
 
-// UnsetHomePage unsets the current home page
+// UnsetHomePage clears the home page flag from any Page entity that currently has it set.
 func (r *PageRepository) UnsetHomePage() error {
 	query := `UPDATE pages SET is_home = FALSE WHERE is_home = TRUE`
 	_, err := r.db.Exec(query)
 	return err
 }
 
-// GetByIDWithWidgets retrieves a page with its widgets
+// GetByIDWithWidgets retrieves a Page entity along with all its associated Widget entities.
 func (r *PageRepository) GetByIDWithWidgets(id uuid.UUID) (*models.Page, error) {
 	page, err := r.GetByID(id)
 	if err != nil || page == nil {
 		return page, err
 	}
 
-	// Get widgets for this page
 	query := `
 		SELECT id, page_id, type, position, config, created_at, updated_at
 		FROM widgets
@@ -237,7 +234,7 @@ func (r *PageRepository) GetByIDWithWidgets(id uuid.UUID) (*models.Page, error) 
 	return page, rows.Err()
 }
 
-// CheckRouteExists checks if a route exists (excluding a specific page ID)
+// CheckRouteExists determines if a given route is already assigned to a Page, optionally excluding a specific ID.
 func (r *PageRepository) CheckRouteExists(route string, excludeID *uuid.UUID) (bool, error) {
 	var query string
 	var args []interface{}

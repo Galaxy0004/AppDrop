@@ -4,7 +4,7 @@ This is a high-performance REST API built in **Go** and **PostgreSQL** for manag
 
 ---
 
-## 🚀 Key Backend Features (Assignment Ready)
+## Key Backend Features (Assignment Ready)
 
 ### 1. Robust Core API
 - **Pages CRUD**: Create, Read, Update, and Delete mobile app screens.
@@ -16,23 +16,23 @@ This is a high-performance REST API built in **Go** and **PostgreSQL** for manag
 - **JSONB Implementation**: Uses PostgreSQL `JSONB` for widget configurations. This allows for total flexibility—a `banner` can have different fields than a `product_grid` without database schema changes.
 - **Strict Validation**: Type-safe widget types (`banner`, `product_grid`, `text`, `image`, `spacer`) and unique route enforcement.
 
-### 3. ✨ Bonus Features (Implemented)
-- **✅ Pagination**: `GET /pages` supports `page` and `per_page` query parameters for optimized data fetching.
-- **✅ Widget Filtering**: `GET /pages/:id/widgets` allows filtering by type (e.g., `?type=banner`).
-- **✅ Reordering Logic**: Dedicated endpoint to batch reorder widgets using a transaction for data integrity.
-- **✅ Request Logging**: Custom middleware that logs method, path, and latency for every request.
-- **✅ Unit Testing**: Comprehensive tests for model validation and business logic.
+### 3. Bonus Features (Implemented)
+- **Pagination**: `GET /pages` supports `page` and `per_page` query parameters for optimized data fetching.
+- **Widget Filtering**: `GET /pages/:id/widgets` allows filtering by type (e.g., `?type=banner`).
+- **Reordering Logic**: Dedicated endpoint to batch reorder widgets using a transaction for data integrity.
+- **Request Logging**: Custom middleware that logs method, path, and latency for every request.
+- **Unit Testing**: Comprehensive tests for model validation and business logic.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 - **Go 1.21+** (Gin Framework)
 - **PostgreSQL 12+** (with UUID support)
 - **Middleware**: Logging, CORS, and Panic Recovery.
 
 ---
 
-## ⚙️ How to Setup & Run
+## How to Setup & Run
 
 ### 1. Database Setup (PostgreSQL)
 Ensure you have PostgreSQL installed and running.
@@ -60,7 +60,7 @@ The server will start on **`http://localhost:8080`**.
 
 ---
 
-## 📖 API Documentation & Testing (CURL)
+## API Documentation & Testing (CURL)
 
 Use these commands to verify the endpoints as required by the assignment.
 
@@ -124,7 +124,7 @@ curl -X POST http://localhost:8080/pages/:page_id/widgets/reorder \
 
 ---
 
-## 🧪 Error Codes
+## Error Codes
 | Code | Reason |
 |------|--------|
 | `VALIDATION_ERROR` | Missing fields or invalid widget type. |
@@ -133,6 +133,6 @@ curl -X POST http://localhost:8080/pages/:page_id/widgets/reorder \
 
 ---
 
-## 📊 Performance Indicators
+## Performance Indicators
 - **Database Indexing**: Optimized indices on `pages(route)`, `widgets(page_id)`, and `widgets(position)` for sub-millisecond query performance.
 - **Connection Pooling**: Configured for high-concurrency mobile traffic.

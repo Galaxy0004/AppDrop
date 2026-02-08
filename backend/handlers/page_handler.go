@@ -1,3 +1,5 @@
+// Package handlers contains the HTTP request handlers for the application.
+// It translates incoming web requests into repository operations and formats outgoing responses.
 package handlers
 
 import (
@@ -13,13 +15,13 @@ import (
 	"github.com/google/uuid"
 )
 
-// PageHandler handles HTTP requests for pages
+// PageHandler orchestrates HTTP request processing for Page-related resources.
 type PageHandler struct {
 	pageRepo   *repository.PageRepository
 	widgetRepo *repository.WidgetRepository
 }
 
-// NewPageHandler creates a new PageHandler
+// NewPageHandler initializes and returns a new instance of PageHandler with its required dependencies.
 func NewPageHandler(pageRepo *repository.PageRepository, widgetRepo *repository.WidgetRepository) *PageHandler {
 	return &PageHandler{
 		pageRepo:   pageRepo,
@@ -27,9 +29,8 @@ func NewPageHandler(pageRepo *repository.PageRepository, widgetRepo *repository.
 	}
 }
 
-// ListPages handles GET /pages
+// ListPages processes requests to retrieve a paginated collection of all available pages.
 func (h *PageHandler) ListPages(c *gin.Context) {
-	// Parse pagination parameters
 	page := 1
 	perPage := 10
 
@@ -65,7 +66,7 @@ func (h *PageHandler) ListPages(c *gin.Context) {
 	})
 }
 
-// GetPage handles GET /pages/:id
+// GetPage processes requests to retrieve the detailed state of a specific page, including its widgets.
 func (h *PageHandler) GetPage(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -87,7 +88,7 @@ func (h *PageHandler) GetPage(c *gin.Context) {
 	c.JSON(http.StatusOK, page)
 }
 
-// CreatePage handles POST /pages
+// CreatePage processes requests to instantiate and persist a new page configuration.
 func (h *PageHandler) CreatePage(c *gin.Context) {
 	var req models.CreatePageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -95,19 +96,16 @@ func (h *PageHandler) CreatePage(c *gin.Context) {
 		return
 	}
 
-	// Validate name
 	if strings.TrimSpace(req.Name) == "" {
 		c.JSON(http.StatusBadRequest, models.NewValidationError("Page name is required and cannot be empty"))
 		return
 	}
 
-	// Validate route
 	if strings.TrimSpace(req.Route) == "" {
 		c.JSON(http.StatusBadRequest, models.NewValidationError("Page route is required and cannot be empty"))
 		return
 	}
 
-	// Check if route already exists
 	exists, err := h.pageRepo.CheckRouteExists(req.Route, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewInternalServerError("Failed to check route"))
@@ -118,7 +116,6 @@ func (h *PageHandler) CreatePage(c *gin.Context) {
 		return
 	}
 
-	// If this is set as home page, unset the current home page
 	if req.IsHome {
 		if err := h.pageRepo.UnsetHomePage(); err != nil {
 			c.JSON(http.StatusInternalServerError, models.NewInternalServerError("Failed to update home page"))
@@ -140,7 +137,7 @@ func (h *PageHandler) CreatePage(c *gin.Context) {
 	c.JSON(http.StatusCreated, page)
 }
 
-// UpdatePage handles PUT /pages/:id
+// UpdatePage processes requests to modify the attributes of an existing page.
 func (h *PageHandler) UpdatePage(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -149,7 +146,6 @@ func (h *PageHandler) UpdatePage(c *gin.Context) {
 		return
 	}
 
-	// Check if page exists
 	existingPage, err := h.pageRepo.GetByID(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewInternalServerError("Failed to fetch page"))
@@ -168,7 +164,6 @@ func (h *PageHandler) UpdatePage(c *gin.Context) {
 
 	updates := make(map[string]interface{})
 
-	// Validate and add name update
 	if req.Name != nil {
 		if strings.TrimSpace(*req.Name) == "" {
 			c.JSON(http.StatusBadRequest, models.NewValidationError("Page name cannot be empty"))
@@ -177,13 +172,11 @@ func (h *PageHandler) UpdatePage(c *gin.Context) {
 		updates["name"] = strings.TrimSpace(*req.Name)
 	}
 
-	// Validate and add route update
 	if req.Route != nil {
 		if strings.TrimSpace(*req.Route) == "" {
 			c.JSON(http.StatusBadRequest, models.NewValidationError("Page route cannot be empty"))
 			return
 		}
-		// Check if route already exists
 		exists, err := h.pageRepo.CheckRouteExists(*req.Route, &id)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.NewInternalServerError("Failed to check route"))
@@ -196,10 +189,8 @@ func (h *PageHandler) UpdatePage(c *gin.Context) {
 		updates["route"] = strings.TrimSpace(*req.Route)
 	}
 
-	// Handle is_home update
 	if req.IsHome != nil {
 		if *req.IsHome && !existingPage.IsHome {
-			// Setting as home page - unset the current home page first
 			if err := h.pageRepo.UnsetHomePage(); err != nil {
 				c.JSON(http.StatusInternalServerError, models.NewInternalServerError("Failed to update home page"))
 				return
@@ -222,7 +213,7 @@ func (h *PageHandler) UpdatePage(c *gin.Context) {
 	c.JSON(http.StatusOK, page)
 }
 
-// DeletePage handles DELETE /pages/:id
+// DeletePage processes requests to remove a page and its associated configurations from the system.
 func (h *PageHandler) DeletePage(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -231,7 +222,6 @@ func (h *PageHandler) DeletePage(c *gin.Context) {
 		return
 	}
 
-	// Check if page exists
 	page, err := h.pageRepo.GetByID(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewInternalServerError("Failed to fetch page"))
@@ -242,13 +232,11 @@ func (h *PageHandler) DeletePage(c *gin.Context) {
 		return
 	}
 
-	// Cannot delete home page
 	if page.IsHome {
 		c.JSON(http.StatusConflict, models.NewConflictError("Cannot delete the home page. Set another page as home first."))
 		return
 	}
 
-	// Delete the page (widgets will be cascade deleted)
 	if err := h.pageRepo.Delete(id); err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, models.NewNotFoundError("Page not found"))

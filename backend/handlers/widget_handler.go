@@ -12,13 +12,13 @@ import (
 	"github.com/google/uuid"
 )
 
-// WidgetHandler handles HTTP requests for widgets
+// WidgetHandler orchestrates HTTP request processing for Widget-related resources.
 type WidgetHandler struct {
 	widgetRepo *repository.WidgetRepository
 	pageRepo   *repository.PageRepository
 }
 
-// NewWidgetHandler creates a new WidgetHandler
+// NewWidgetHandler initializes and returns a new instance of WidgetHandler with its required dependencies.
 func NewWidgetHandler(widgetRepo *repository.WidgetRepository, pageRepo *repository.PageRepository) *WidgetHandler {
 	return &WidgetHandler{
 		widgetRepo: widgetRepo,
@@ -26,7 +26,7 @@ func NewWidgetHandler(widgetRepo *repository.WidgetRepository, pageRepo *reposit
 	}
 }
 
-// CreateWidget handles POST /pages/:id/widgets
+// CreateWidget processes requests to instantiate and persist a new widget within a specific page context.
 func (h *WidgetHandler) CreateWidget(c *gin.Context) {
 	pageIDStr := c.Param("id")
 	pageID, err := uuid.Parse(pageIDStr)
@@ -35,7 +35,6 @@ func (h *WidgetHandler) CreateWidget(c *gin.Context) {
 		return
 	}
 
-	// Check if page exists
 	page, err := h.pageRepo.GetByID(pageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewInternalServerError("Failed to fetch page"))
@@ -52,14 +51,12 @@ func (h *WidgetHandler) CreateWidget(c *gin.Context) {
 		return
 	}
 
-	// Validate widget type
 	if !models.IsValidWidgetType(req.Type) {
 		c.JSON(http.StatusBadRequest, models.NewValidationError("Invalid widget type. Must be one of: banner, product_grid, text, image, spacer"))
 		return
 	}
 
-	// Validate config JSON if provided
-	if req.Config != nil && len(req.Config) > 0 {
+	if len(req.Config) > 0 {
 		var configTest interface{}
 		if err := json.Unmarshal(req.Config, &configTest); err != nil {
 			c.JSON(http.StatusBadRequest, models.NewValidationError("Invalid JSON format for widget config"))
@@ -67,7 +64,6 @@ func (h *WidgetHandler) CreateWidget(c *gin.Context) {
 		}
 	}
 
-	// Get max position if position not specified
 	position := req.Position
 	if position == 0 {
 		maxPos, err := h.widgetRepo.GetMaxPosition(pageID)
@@ -98,7 +94,7 @@ func (h *WidgetHandler) CreateWidget(c *gin.Context) {
 	c.JSON(http.StatusCreated, widget)
 }
 
-// UpdateWidget handles PUT /widgets/:id
+// UpdateWidget processes requests to modify the attributes or configuration of an existing widget.
 func (h *WidgetHandler) UpdateWidget(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -107,7 +103,6 @@ func (h *WidgetHandler) UpdateWidget(c *gin.Context) {
 		return
 	}
 
-	// Check if widget exists
 	existingWidget, err := h.widgetRepo.GetByID(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewInternalServerError("Failed to fetch widget"))
@@ -126,7 +121,6 @@ func (h *WidgetHandler) UpdateWidget(c *gin.Context) {
 
 	updates := make(map[string]interface{})
 
-	// Validate and add type update
 	if req.Type != nil {
 		if !models.IsValidWidgetType(*req.Type) {
 			c.JSON(http.StatusBadRequest, models.NewValidationError("Invalid widget type. Must be one of: banner, product_grid, text, image, spacer"))
@@ -135,12 +129,10 @@ func (h *WidgetHandler) UpdateWidget(c *gin.Context) {
 		updates["type"] = *req.Type
 	}
 
-	// Add position update
 	if req.Position != nil {
 		updates["position"] = *req.Position
 	}
 
-	// Validate and add config update
 	if req.Config != nil {
 		var configTest interface{}
 		if err := json.Unmarshal(*req.Config, &configTest); err != nil {
@@ -164,7 +156,7 @@ func (h *WidgetHandler) UpdateWidget(c *gin.Context) {
 	c.JSON(http.StatusOK, widget)
 }
 
-// DeleteWidget handles DELETE /widgets/:id
+// DeleteWidget processes requests to remove a widget from its associated page.
 func (h *WidgetHandler) DeleteWidget(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -173,7 +165,6 @@ func (h *WidgetHandler) DeleteWidget(c *gin.Context) {
 		return
 	}
 
-	// Check if widget exists
 	widget, err := h.widgetRepo.GetByID(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewInternalServerError("Failed to fetch widget"))
@@ -196,7 +187,7 @@ func (h *WidgetHandler) DeleteWidget(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Widget deleted successfully"})
 }
 
-// ReorderWidgets handles POST /pages/:id/widgets/reorder
+// ReorderWidgets processes requests to synchronously update the sequential arrangement of widgets on a page.
 func (h *WidgetHandler) ReorderWidgets(c *gin.Context) {
 	pageIDStr := c.Param("id")
 	pageID, err := uuid.Parse(pageIDStr)
@@ -205,7 +196,6 @@ func (h *WidgetHandler) ReorderWidgets(c *gin.Context) {
 		return
 	}
 
-	// Check if page exists
 	page, err := h.pageRepo.GetByID(pageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewInternalServerError("Failed to fetch page"))
@@ -227,7 +217,6 @@ func (h *WidgetHandler) ReorderWidgets(c *gin.Context) {
 		return
 	}
 
-	// Check for duplicates
 	seen := make(map[uuid.UUID]bool)
 	for _, id := range req.WidgetIDs {
 		if seen[id] {
@@ -237,7 +226,6 @@ func (h *WidgetHandler) ReorderWidgets(c *gin.Context) {
 		seen[id] = true
 	}
 
-	// Verify all widgets belong to this page
 	widgetCount, err := h.widgetRepo.GetWidgetCountByPageID(pageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewInternalServerError("Failed to verify widgets"))
@@ -249,13 +237,11 @@ func (h *WidgetHandler) ReorderWidgets(c *gin.Context) {
 		return
 	}
 
-	// Reorder widgets
 	if err := h.widgetRepo.Reorder(pageID, req.WidgetIDs); err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewInternalServerError("Failed to reorder widgets: "+err.Error()))
 		return
 	}
 
-	// Get updated widgets
 	widgets, err := h.widgetRepo.GetByPageID(pageID, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewInternalServerError("Failed to fetch updated widgets"))
@@ -268,7 +254,7 @@ func (h *WidgetHandler) ReorderWidgets(c *gin.Context) {
 	})
 }
 
-// GetWidgets handles GET /pages/:id/widgets (bonus: with type filter)
+// GetWidgets processes requests to retrieve all widgets for a page, with optional type-based filtering.
 func (h *WidgetHandler) GetWidgets(c *gin.Context) {
 	pageIDStr := c.Param("id")
 	pageID, err := uuid.Parse(pageIDStr)
@@ -277,7 +263,6 @@ func (h *WidgetHandler) GetWidgets(c *gin.Context) {
 		return
 	}
 
-	// Check if page exists
 	page, err := h.pageRepo.GetByID(pageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewInternalServerError("Failed to fetch page"))
@@ -288,7 +273,6 @@ func (h *WidgetHandler) GetWidgets(c *gin.Context) {
 		return
 	}
 
-	// Get widget type filter
 	var widgetType *string
 	if t := c.Query("type"); t != "" {
 		if !models.IsValidWidgetType(t) {

@@ -1,11 +1,11 @@
-// ============================================
-// API Configuration
-// ============================================
+/**
+ * API service base URL for external communication.
+ */
 const API_BASE_URL = 'http://localhost:8080';
 
-// ============================================
-// State Management
-// ============================================
+/**
+ * Application-wide state container managing navigation, theme, and resource collections.
+ */
 const state = {
     pages: [],
     currentPage: 1,
@@ -16,9 +16,9 @@ const state = {
     theme: localStorage.getItem('theme') || 'light'
 };
 
-// ============================================
-// DOM Elements
-// ============================================
+/**
+ * Registry of primary DOM elements used across the application for direct manipulation.
+ */
 const elements = {
     sidebar: document.getElementById('sidebar'),
     menuToggle: document.getElementById('menuToggle'),
@@ -27,7 +27,6 @@ const elements = {
     addNewBtn: document.getElementById('addNewBtn'),
     sectionTitle: document.getElementById('sectionTitle'),
 
-    // Sections
     dashboardSection: document.getElementById('dashboardSection'),
     pagesSection: document.getElementById('pagesSection'),
     widgetsSection: document.getElementById('widgetsSection'),
@@ -36,7 +35,6 @@ const elements = {
     mobileContent: document.getElementById('mobileContent'),
     previewPageTitle: document.getElementById('previewPageTitle'),
 
-    // Stats
     totalPages: document.getElementById('totalPages'),
     totalWidgets: document.getElementById('totalWidgets'),
     homePage: document.getElementById('homePage'),
@@ -44,13 +42,11 @@ const elements = {
     apiStatusBadge: document.getElementById('apiStatusBadge'),
     pageCount: document.getElementById('pageCount'),
 
-    // Modals
     pageModal: document.getElementById('pageModal'),
     widgetModal: document.getElementById('widgetModal'),
     pageModalTitle: document.getElementById('pageModalTitle'),
     widgetModalTitle: document.getElementById('widgetModalTitle'),
 
-    // Forms
     pageForm: document.getElementById('pageForm'),
     widgetForm: document.getElementById('widgetForm'),
     pageId: document.getElementById('pageId'),
@@ -63,7 +59,6 @@ const elements = {
     widgetPosition: document.getElementById('widgetPosition'),
     widgetConfig: document.getElementById('widgetConfig'),
 
-    // Lists
     recentPagesList: document.getElementById('recentPagesList'),
     pagesGrid: document.getElementById('pagesGrid'),
     pagesPagination: document.getElementById('pagesPagination'),
@@ -72,13 +67,12 @@ const elements = {
     widgetTypeFilter: document.getElementById('widgetTypeFilter'),
     pageFilter: document.getElementById('pageFilter'),
 
-    // Toast
     toastContainer: document.getElementById('toastContainer')
 };
 
-// ============================================
-// Initialize Application
-// ============================================
+/**
+ * Core initialization routine triggered upon DOM content load.
+ */
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initEventListeners();
@@ -86,9 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDashboardData();
 });
 
-// ============================================
-// Theme Management
-// ============================================
+/**
+ * Theme initialization based on persisted user preference.
+ */
 function initTheme() {
     if (state.theme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
@@ -96,6 +90,9 @@ function initTheme() {
     }
 }
 
+/**
+ * Toggles application theme between light and dark modes and persists the selection.
+ */
 function toggleTheme() {
     const isDark = state.theme === 'dark';
     state.theme = isDark ? 'light' : 'dark';
@@ -110,6 +107,9 @@ function toggleTheme() {
     updateThemeIcons(!isDark);
 }
 
+/**
+ * Synchronizes UI icons with the current theme state.
+ */
 function updateThemeIcons(isDark) {
     const moonIcon = elements.themeToggle.querySelector('.icon-moon');
     const sunIcon = elements.themeToggle.querySelector('.icon-sun');
@@ -123,22 +123,19 @@ function updateThemeIcons(isDark) {
     }
 }
 
-// ============================================
-// Event Listeners
-// ============================================
+/**
+ * Registers global event handlers for application interactions.
+ */
 function initEventListeners() {
-    // Mobile menu toggle
     elements.menuToggle.addEventListener('click', () => {
         elements.sidebar.classList.toggle('open');
     });
 
-    // Theme toggle
     elements.themeToggle.addEventListener('click', (e) => {
         e.preventDefault();
         toggleTheme();
     });
 
-    // Navigation
     document.querySelectorAll('.nav-item[data-section]').forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
@@ -147,7 +144,6 @@ function initEventListeners() {
         });
     });
 
-    // View all links
     document.querySelectorAll('.view-all[data-section]').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
@@ -156,10 +152,8 @@ function initEventListeners() {
         });
     });
 
-    // Add new button
     elements.addNewBtn.addEventListener('click', handleAddNew);
 
-    // Preview button
     elements.previewBtn.addEventListener('click', () => {
         if (state.selectedPageId) {
             scrollToPreview();
@@ -168,7 +162,6 @@ function initEventListeners() {
         }
     });
 
-    // Page selector change
     elements.pageSelector.addEventListener('change', (e) => {
         state.selectedPageId = e.target.value;
         if (state.selectedPageId) {
@@ -178,17 +171,14 @@ function initEventListeners() {
         }
     });
 
-    // Widget type filter
     elements.widgetTypeFilter.addEventListener('change', (e) => {
         if (state.selectedPageId) {
             loadWidgets(state.selectedPageId, e.target.value);
         }
     });
 
-    // Page filter
     elements.pageFilter.addEventListener('change', loadPages);
 
-    // Close modals on overlay click
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
@@ -197,7 +187,6 @@ function initEventListeners() {
         });
     });
 
-    // Close sidebar when clicking outside on mobile
     document.addEventListener('click', (e) => {
         if (window.innerWidth <= 1024 &&
             !elements.sidebar.contains(e.target) &&
@@ -208,11 +197,12 @@ function initEventListeners() {
     });
 }
 
-// ============================================
-// Navigation
-// ============================================
+
+/**
+ * Handles application-level navigation between functional sections.
+ * @param {string} section - The identifier of the section to display.
+ */
 function navigateToSection(section) {
-    // Update nav items
     document.querySelectorAll('.nav-item[data-section]').forEach(item => {
         item.classList.remove('active');
         if (item.dataset.section === section) {
@@ -220,12 +210,10 @@ function navigateToSection(section) {
         }
     });
 
-    // Update sections
     document.querySelectorAll('.content-section').forEach(sec => {
         sec.classList.add('hidden');
     });
 
-    // Update title and show section
     switch (section) {
         case 'dashboard':
             elements.sectionTitle.textContent = 'Dashboard';
@@ -248,10 +236,12 @@ function navigateToSection(section) {
             break;
     }
 
-    // Close mobile sidebar
     elements.sidebar.classList.remove('open');
 }
 
+/**
+ * Orchestrates the creation of new resources based on the currently active application section.
+ */
 function handleAddNew() {
     const activeSection = document.querySelector('.nav-item.active').dataset.section;
 
@@ -272,9 +262,13 @@ function handleAddNew() {
     }
 }
 
-// ============================================
-// API Calls
-// ============================================
+/**
+ * Generic API communication wrapper with error handling and response parsing.
+ * @param {string} endpoint - API endpoint path.
+ * @param {string} [method='GET'] - HTTP method.
+ * @param {Object} [body=null] - Request payload.
+ * @returns {Promise<Object>} The parsed JSON response.
+ */
 async function apiCall(endpoint, method = 'GET', body = null) {
     const options = {
         method,
@@ -304,6 +298,10 @@ async function apiCall(endpoint, method = 'GET', body = null) {
     }
 }
 
+/**
+ * Validates the operational status of the backend API service.
+ * @returns {Promise<boolean>} True if the API is reachable and healthy.
+ */
 async function checkApiStatus() {
     try {
         const response = await apiCall('/health');
@@ -321,23 +319,20 @@ async function checkApiStatus() {
     }
 }
 
-// ============================================
-// Dashboard
-// ============================================
+/**
+ * Orchestrates the retrieval and display of high-level application metrics and recent activity for the dashboard.
+ */
 async function loadDashboardData() {
     try {
         const data = await apiCall(`/pages?page=1&per_page=100`);
         state.pages = data.pages || [];
 
-        // Update stats
         elements.totalPages.textContent = data.total || 0;
         elements.pageCount.textContent = data.total || 0;
 
-        // Find home page
         const homePage = state.pages.find(p => p.is_home);
         elements.homePage.textContent = homePage ? homePage.name : 'Not Set';
 
-        // Count widgets
         let widgetCount = 0;
         for (const page of state.pages) {
             const pageData = await apiCall(`/pages/${page.id}`);
@@ -345,7 +340,6 @@ async function loadDashboardData() {
         }
         elements.totalWidgets.textContent = widgetCount;
 
-        // Render recent pages
         renderRecentPages(state.pages.slice(0, 5));
     } catch (error) {
         console.error('Failed to load dashboard data:', error);
@@ -353,6 +347,10 @@ async function loadDashboardData() {
     }
 }
 
+/**
+ * Renders a succinct list of recently accessed or modified pages.
+ * @param {Array} pages - Collection of page objects to render.
+ */
 function renderRecentPages(pages) {
     if (!pages || pages.length === 0) {
         elements.recentPagesList.innerHTML = `
@@ -385,9 +383,10 @@ function renderRecentPages(pages) {
     `).join('');
 }
 
-// ============================================
-// Pages
-// ============================================
+
+/**
+ * Retrieves and renders a paginated collection of pages from the API.
+ */
 async function loadPages() {
     try {
         const filter = elements.pageFilter.value;
@@ -395,7 +394,6 @@ async function loadPages() {
 
         let pages = data.pages || [];
 
-        // Apply filter
         if (filter === 'home') {
             pages = pages.filter(p => p.is_home);
         } else if (filter === 'regular') {
@@ -414,6 +412,10 @@ async function loadPages() {
     }
 }
 
+/**
+ * Generates and injects HTML markup for the page cards grid.
+ * @param {Array} pages - Collection of page objects to render.
+ */
 function renderPages(pages) {
     if (!pages || pages.length === 0) {
         renderEmptyPages();
@@ -482,6 +484,9 @@ function renderPages(pages) {
     `).join('');
 }
 
+/**
+ * Renders an empty state placeholder when no pages are available or match the criteria.
+ */
 function renderEmptyPages() {
     elements.pagesGrid.innerHTML = `
         <div class="empty-state" style="grid-column: 1 / -1;">
@@ -495,6 +500,9 @@ function renderEmptyPages() {
     `;
 }
 
+/**
+ * Generates and injects HTML markup for the pagination controls.
+ */
 function renderPagination() {
     if (state.totalPages <= 1) {
         elements.pagesPagination.innerHTML = '';
@@ -503,14 +511,12 @@ function renderPagination() {
 
     let html = '';
 
-    // Previous button
     html += `<button class="pagination-btn" ${state.currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${state.currentPage - 1})">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
             <polyline points="15 18 9 12 15 6"/>
         </svg>
     </button>`;
 
-    // Page numbers
     for (let i = 1; i <= state.totalPages; i++) {
         if (i === 1 || i === state.totalPages || (i >= state.currentPage - 1 && i <= state.currentPage + 1)) {
             html += `<button class="pagination-btn ${i === state.currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
@@ -519,7 +525,6 @@ function renderPagination() {
         }
     }
 
-    // Next button
     html += `<button class="pagination-btn" ${state.currentPage === state.totalPages ? 'disabled' : ''} onclick="goToPage(${state.currentPage + 1})">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
             <polyline points="9 18 15 12 9 6"/>
@@ -529,15 +534,20 @@ function renderPagination() {
     elements.pagesPagination.innerHTML = html;
 }
 
+/**
+ * Navigates to a specific page within the collection.
+ * @param {number} page - The target page number.
+ */
 function goToPage(page) {
     if (page < 1 || page > state.totalPages) return;
     state.currentPage = page;
     loadPages();
 }
 
-// ============================================
-// Widgets
-// ============================================
+
+/**
+ * Populates the page selection dropdown with available pages.
+ */
 async function loadPageSelector() {
     try {
         const data = await apiCall('/pages?page=1&per_page=100');
@@ -555,6 +565,11 @@ async function loadPageSelector() {
     }
 }
 
+/**
+ * Retrieves and renders widgets for a specific page, optionally filtered by type.
+ * @param {string} pageId - The identifier of the page.
+ * @param {string} [typeFilter=''] - Optional widget type filter.
+ */
 async function loadWidgets(pageId, typeFilter = '') {
     try {
         let endpoint = `/pages/${pageId}/widgets`;
@@ -574,6 +589,10 @@ async function loadWidgets(pageId, typeFilter = '') {
     }
 }
 
+/**
+ * Generates and injects HTML markup for the widget management list.
+ * @param {Array} widgets - Collection of widget objects to render.
+ */
 function renderWidgets(widgets) {
     if (!widgets || widgets.length === 0) {
         elements.widgetsContainer.innerHTML = `
@@ -629,10 +648,12 @@ function renderWidgets(widgets) {
         </div>
     `;
 
-    // Initialize drag and drop
     initWidgetDragDrop();
 }
 
+/**
+ * Resets the widget container and preview pane to their default empty states.
+ */
 function renderEmptyWidgets() {
     elements.widgetsContainer.innerHTML = `
         <div class="empty-state">
@@ -651,6 +672,11 @@ function renderEmptyWidgets() {
     elements.previewPageTitle.textContent = 'AppDrop';
 }
 
+
+/**
+ * Renders a simulated mobile interface displaying current widgets for visual verification.
+ * @param {Array} widgets - Collection of widget objects to render in the preview.
+ */
 function renderMobilePreview(widgets) {
     if (!widgets || widgets.length === 0) {
         elements.mobileContent.innerHTML = `
@@ -715,6 +741,9 @@ function renderMobilePreview(widgets) {
     }).join('');
 }
 
+/**
+ * Scrolls the viewport to the mobile preview container on smaller screens.
+ */
 function scrollToPreview() {
     const previewContainer = document.querySelector('.mobile-preview-container');
     if (window.innerWidth <= 1024) {
@@ -722,6 +751,11 @@ function scrollToPreview() {
     }
 }
 
+/**
+ * Returns the SVG markup for a specific widget type.
+ * @param {string} type - The widget type identifier.
+ * @returns {string} SVG HTML string.
+ */
 function getWidgetIcon(type) {
     const icons = {
         banner: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -754,13 +788,18 @@ function getWidgetIcon(type) {
     return icons[type] || icons.text;
 }
 
+/**
+ * Formats a raw widget type identifier into a human-readable string.
+ * @param {string} type - The raw widget type (e.g., 'product_grid').
+ * @returns {string} Formatted string (e.g., 'Product Grid').
+ */
 function formatWidgetType(type) {
     return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }
 
-// ============================================
-// Drag and Drop
-// ============================================
+/**
+ * Initializes HTML5 Drag and Drop functionality for reordering widgets.
+ */
 function initWidgetDragDrop() {
     const list = document.getElementById('widgetsList');
     if (!list) return;
@@ -798,6 +837,10 @@ function initWidgetDragDrop() {
     });
 }
 
+
+/**
+ * Persists the current sequential arrangement of widgets to the persistent store.
+ */
 async function saveWidgetOrder() {
     if (!state.selectedPageId) return;
 
@@ -815,9 +858,10 @@ async function saveWidgetOrder() {
     }
 }
 
-// ============================================
-// Page Modal
-// ============================================
+/**
+ * Interface entry point for creating or editing page resources.
+ * @param {Object} [page=null] - Optional page object for edit mode.
+ */
 function openPageModal(page = null) {
     elements.pageModalTitle.textContent = page ? 'Edit Page' : 'Create Page';
     elements.pageForm.reset();
@@ -834,10 +878,17 @@ function openPageModal(page = null) {
     elements.pageModal.classList.add('active');
 }
 
+/**
+ * Dismisses the page management modal.
+ */
 function closePageModal() {
     elements.pageModal.classList.remove('active');
 }
 
+/**
+ * Retrieves details for a specific page and opens the edit interface.
+ * @param {string} pageId - The identifier of the page to edit.
+ */
 async function editPage(pageId) {
     try {
         const page = await apiCall(`/pages/${pageId}`);
@@ -848,6 +899,9 @@ async function editPage(pageId) {
     }
 }
 
+/**
+ * Validates and persists page resource changes to the API.
+ */
 async function savePage() {
     const id = elements.pageId.value;
     const name = elements.pageName.value.trim();
@@ -879,6 +933,11 @@ async function savePage() {
     }
 }
 
+/**
+ * Facilitates the deletion of a page resource after user confirmation.
+ * @param {string} pageId - The identifier of the page to delete.
+ * @param {boolean} isHome - Protection flag for the primary home page.
+ */
 async function deletePage(pageId, isHome) {
     if (isHome) {
         showToast('Cannot delete the home page. Set another page as home first.', 'warning');
@@ -900,19 +959,28 @@ async function deletePage(pageId, isHome) {
     }
 }
 
+/**
+ * Directs the application context to the pages view.
+ * @param {string} pageId - The identifier of the page to view.
+ */
 function viewPage(pageId) {
     navigateToSection('pages');
-    // Could expand to show page details in future
 }
 
+/**
+ * Directs the application context to the widgets view for a specific page.
+ * @param {string} pageId - The identifier of the page whose widgets will be viewed.
+ */
 function viewPageWidgets(pageId) {
     state.selectedPageId = pageId;
     navigateToSection('widgets');
 }
 
-// ============================================
-// Widget Modal
-// ============================================
+/**
+ * Interface entry point for creating or editing widget resources.
+ * @param {string} pageId - The identifier of the parent page.
+ * @param {Object} [widget=null] - Optional widget object for edit mode.
+ */
 function openWidgetModal(pageId, widget = null) {
     elements.widgetModalTitle.textContent = widget ? 'Edit Widget' : 'Add Widget';
     elements.widgetForm.reset();
@@ -931,10 +999,17 @@ function openWidgetModal(pageId, widget = null) {
     elements.widgetModal.classList.add('active');
 }
 
+/**
+ * Dismisses the widget management modal.
+ */
 function closeWidgetModal() {
     elements.widgetModal.classList.remove('active');
 }
 
+/**
+ * Locates a widget within the local state and opens the edit interface.
+ * @param {string} widgetId - The identifier of the widget to edit.
+ */
 async function editWidget(widgetId) {
     const widget = state.widgets.find(w => w.id === widgetId);
     if (widget) {
@@ -942,6 +1017,9 @@ async function editWidget(widgetId) {
     }
 }
 
+/**
+ * Validates and persists widget resource changes to the API.
+ */
 async function saveWidget() {
     const id = elements.widgetId.value;
     const pageId = elements.widgetPageId.value;
@@ -984,6 +1062,10 @@ async function saveWidget() {
     }
 }
 
+/**
+ * Facilitates the deletion of a widget resource after user confirmation.
+ * @param {string} widgetId - The identifier of the widget to delete.
+ */
 async function deleteWidget(widgetId) {
     if (!confirm('Are you sure you want to delete this widget?')) {
         return;
@@ -1000,9 +1082,12 @@ async function deleteWidget(widgetId) {
     }
 }
 
-// ============================================
-// Toast Notifications
-// ============================================
+/**
+ * Displays a transient notification message to the user.
+ * @param {string} message - Content of the notification.
+ * @param {string} [type='info'] - Severity level (success, error, warning, info).
+ * @param {string} [title=null] - Optional notification title.
+ */
 function showToast(message, type = 'info', title = null) {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
@@ -1052,7 +1137,6 @@ function showToast(message, type = 'info', title = null) {
 
     elements.toastContainer.appendChild(toast);
 
-    // Auto remove after 5 seconds
     setTimeout(() => {
         if (toast.parentElement) {
             toast.remove();
@@ -1060,26 +1144,30 @@ function showToast(message, type = 'info', title = null) {
     }, 5000);
 }
 
-// ============================================
-// Utility Functions
-// ============================================
+/**
+ * Sanitizes input text by escaping HTML special characters.
+ * @param {string} text - The raw text to sanitize.
+ * @returns {string} Sanitized HTML string.
+ */
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
+/**
+ * Formats an ISO date string into a localized short format.
+ * @param {string} dateString - The ISO date string to format.
+ * @returns {string} Localized date string.
+ */
 function formatDate(dateString) {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
+        month: 'short', day: 'numeric', year: 'numeric'
     });
 }
 
-// Make functions globally accessible
 window.openPageModal = openPageModal;
 window.closePageModal = closePageModal;
 window.savePage = savePage;
@@ -1093,3 +1181,4 @@ window.saveWidget = saveWidget;
 window.editWidget = editWidget;
 window.deleteWidget = deleteWidget;
 window.goToPage = goToPage;
+

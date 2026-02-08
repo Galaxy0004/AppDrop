@@ -1,3 +1,4 @@
+// Package middleware provides HTTP interceptors for logging, security, and error recovery.
 package middleware
 
 import (
@@ -7,24 +8,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Logger returns a middleware that logs HTTP requests
+// Logger initializes and returns a middleware handler for structured request/response logging.
+// It captures execution latency, status codes, and client information for each incoming request.
 func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Start timer
 		start := time.Now()
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
 
-		// Process request
 		c.Next()
 
-		// Stop timer
 		latency := time.Since(start)
 		statusCode := c.Writer.Status()
 		clientIP := c.ClientIP()
 		method := c.Request.Method
 
-		// Log format
 		if query != "" {
 			path = path + "?" + query
 		}
@@ -38,7 +36,6 @@ func Logger() gin.HandlerFunc {
 			path,
 		)
 
-		// Log errors if any
 		if len(c.Errors) > 0 {
 			for _, e := range c.Errors {
 				log.Printf("Error: %s", e.Error())
@@ -47,7 +44,8 @@ func Logger() gin.HandlerFunc {
 	}
 }
 
-// CORS returns a middleware that handles CORS
+// CORS initializes and returns a middleware handler for Cross-Origin Resource Sharing (CORS) configuration.
+// It sets permissive headers to facilitate communication with front-end applications hosted on different origins.
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -64,7 +62,8 @@ func CORS() gin.HandlerFunc {
 	}
 }
 
-// Recovery returns a middleware that recovers from any panics
+// Recovery initializes and returns a panic-recovery middleware provided by the Gin framework.
+// It ensures that the server gracefully recovers from unexpected runtime panics and returns a 500 error instead of crashing.
 func Recovery() gin.HandlerFunc {
 	return gin.Recovery()
 }

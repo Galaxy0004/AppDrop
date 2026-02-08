@@ -1,3 +1,5 @@
+// Package repository provides the data access layer for the application.
+// It contains implementations for interacting with the persistent data store.
 package repository
 
 import (
@@ -10,17 +12,18 @@ import (
 	"github.com/google/uuid"
 )
 
-// WidgetRepository handles database operations for widgets
+// WidgetRepository manages database operations specifically for Widget entities.
+// It provides methods for CRUD operations, reordering, and validation.
 type WidgetRepository struct {
 	db *sql.DB
 }
 
-// NewWidgetRepository creates a new WidgetRepository
+// NewWidgetRepository initializes and returns a new instance of WidgetRepository.
 func NewWidgetRepository(db *sql.DB) *WidgetRepository {
 	return &WidgetRepository{db: db}
 }
 
-// Create creates a new widget in the database
+// Create persists a new Widget entity in the data store.
 func (r *WidgetRepository) Create(widget *models.Widget) error {
 	config := widget.Config
 	if config == nil {
@@ -36,7 +39,7 @@ func (r *WidgetRepository) Create(widget *models.Widget) error {
 		Scan(&widget.ID, &widget.CreatedAt, &widget.UpdatedAt)
 }
 
-// GetByID retrieves a widget by its ID
+// GetByID retrieves a single Widget entity by its unique identifier.
 func (r *WidgetRepository) GetByID(id uuid.UUID) (*models.Widget, error) {
 	query := `
 		SELECT id, page_id, type, position, config, created_at, updated_at
@@ -59,7 +62,8 @@ func (r *WidgetRepository) GetByID(id uuid.UUID) (*models.Widget, error) {
 	return widget, nil
 }
 
-// GetByPageID retrieves all widgets for a page
+// GetByPageID retrieves a collection of Widget entities associated with a specific Page.
+// An optional widgetType filter can be applied to narrow the results.
 func (r *WidgetRepository) GetByPageID(pageID uuid.UUID, widgetType *string) ([]models.Widget, error) {
 	var query string
 	var args []interface{}
@@ -105,7 +109,7 @@ func (r *WidgetRepository) GetByPageID(pageID uuid.UUID, widgetType *string) ([]
 	return widgets, rows.Err()
 }
 
-// GetMaxPosition retrieves the maximum position for widgets on a page
+// GetMaxPosition determines the highest position index currently assigned to widgets on a page.
 func (r *WidgetRepository) GetMaxPosition(pageID uuid.UUID) (int, error) {
 	query := `SELECT COALESCE(MAX(position), 0) FROM widgets WHERE page_id = $1`
 	var maxPosition int
@@ -113,9 +117,8 @@ func (r *WidgetRepository) GetMaxPosition(pageID uuid.UUID) (int, error) {
 	return maxPosition, err
 }
 
-// Update updates a widget in the database
+// Update modifies an existing Widget entity with the provided field updates.
 func (r *WidgetRepository) Update(id uuid.UUID, updates map[string]interface{}) (*models.Widget, error) {
-	// Build dynamic update query
 	setClauses := ""
 	args := []interface{}{}
 	argIndex := 1
@@ -157,7 +160,7 @@ func (r *WidgetRepository) Update(id uuid.UUID, updates map[string]interface{}) 
 	return widget, nil
 }
 
-// Delete deletes a widget from the database
+// Delete removes a Widget entity from the data store by its ID.
 func (r *WidgetRepository) Delete(id uuid.UUID) error {
 	query := `DELETE FROM widgets WHERE id = $1`
 	result, err := r.db.Exec(query, id)
@@ -174,7 +177,7 @@ func (r *WidgetRepository) Delete(id uuid.UUID) error {
 	return nil
 }
 
-// Reorder reorders widgets on a page
+// Reorder applies a new sequential order to a list of widgets within a specific page.
 func (r *WidgetRepository) Reorder(pageID uuid.UUID, widgetIDs []uuid.UUID) error {
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -182,7 +185,6 @@ func (r *WidgetRepository) Reorder(pageID uuid.UUID, widgetIDs []uuid.UUID) erro
 	}
 	defer tx.Rollback()
 
-	// Update positions for each widget
 	for i, widgetID := range widgetIDs {
 		query := `UPDATE widgets SET position = $1 WHERE id = $2 AND page_id = $3`
 		result, err := tx.Exec(query, i+1, widgetID, pageID)
@@ -201,7 +203,7 @@ func (r *WidgetRepository) Reorder(pageID uuid.UUID, widgetIDs []uuid.UUID) erro
 	return tx.Commit()
 }
 
-// GetWidgetCountByPageID gets the count of widgets on a page
+// GetWidgetCountByPageID returns the total number of widgets associated with a specific page.
 func (r *WidgetRepository) GetWidgetCountByPageID(pageID uuid.UUID) (int, error) {
 	query := `SELECT COUNT(*) FROM widgets WHERE page_id = $1`
 	var count int
@@ -209,18 +211,17 @@ func (r *WidgetRepository) GetWidgetCountByPageID(pageID uuid.UUID) (int, error)
 	return count, err
 }
 
-// CheckWidgetsBelongToPage checks if all widget IDs belong to a specific page
+// CheckWidgetsBelongToPage validates that a set of widget IDs all belong to the specified page identifier.
 func (r *WidgetRepository) CheckWidgetsBelongToPage(pageID uuid.UUID, widgetIDs []uuid.UUID) (bool, error) {
 	if len(widgetIDs) == 0 {
 		return true, nil
 	}
 
-	// Count widgets that belong to this page
 	query := `
 		SELECT COUNT(*) FROM widgets 
 		WHERE page_id = $1 AND id = ANY($2)
 	`
-	
+
 	var count int
 	err := r.db.QueryRow(query, pageID, widgetIDs).Scan(&count)
 	if err != nil {

@@ -1,3 +1,5 @@
+// Package database manages the lifecycle of the application's connection to the persistent data store.
+// It handles configuration parsing, connection establishment, and pooling parameters.
 package database
 
 import (
@@ -9,9 +11,10 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// DB represents the global database connection pool instance.
 var DB *sql.DB
 
-// Config holds database configuration
+// Config encapsulates the necessary parameters for establishing a connection to a PostgreSQL database.
 type Config struct {
 	Host     string
 	Port     string
@@ -21,7 +24,8 @@ type Config struct {
 	SSLMode  string
 }
 
-// NewConfigFromEnv creates a config from environment variables
+// NewConfigFromEnv initializes a Config instance by reading parameters from system environment variables.
+// It applies sensible defaults if specific variables are not defined.
 func NewConfigFromEnv() Config {
 	return Config{
 		Host:     getEnv("DB_HOST", "localhost"),
@@ -33,7 +37,7 @@ func NewConfigFromEnv() Config {
 	}
 }
 
-// getEnv gets an environment variable with a default value
+// getEnv retrieves the value of an environment variable or returns a specified default value.
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
@@ -41,7 +45,8 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-// Connect establishes a connection to the database
+// Connect establishes a persistent connection to the PostgreSQL database using the provided configuration.
+// It performs a ping to verify connectivity and configures connection pool parameters.
 func Connect(config Config) error {
 	connStr := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
@@ -54,12 +59,10 @@ func Connect(config Config) error {
 		return fmt.Errorf("failed to open database connection: %w", err)
 	}
 
-	// Test the connection
 	if err := DB.Ping(); err != nil {
 		return fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	// Set connection pool settings
 	DB.SetMaxOpenConns(25)
 	DB.SetMaxIdleConns(5)
 
@@ -67,7 +70,7 @@ func Connect(config Config) error {
 	return nil
 }
 
-// Close closes the database connection
+// Close terminates the active database connection pool if it exists.
 func Close() error {
 	if DB != nil {
 		return DB.Close()
@@ -75,7 +78,7 @@ func Close() error {
 	return nil
 }
 
-// GetDB returns the database connection
+// GetDB retrieves the active global database connection pool.
 func GetDB() *sql.DB {
 	return DB
 }
